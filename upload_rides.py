@@ -3,12 +3,12 @@ import psycopg2
 
 def update_fact_rides():
     read_conn = psycopg2.connect(dbname='taxi', user='etl_tech_user', 
-                            password='etl_tech_user_password', host='de-edu-db.chronosavant.ru')
+                            password='etl_tech_user_password', host='de-edu-db.chronosavant.ru', sslmode='require')
     read_cursor = read_conn.cursor()
 
 
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
-                            password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru')
+                            password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
 
 
@@ -21,7 +21,7 @@ def update_fact_rides():
             last_read_line_num = int(last_read_line_num)
 
     read_cursor.execute(f"""SELECT point_from, point_to, distance, price, client_phone, ry.car_plate_num as car_plate_num,\
-                                ry.dt as arrival_dt, NULL as start_dt, cl.dt as end_dt, cl.movement_id
+                                ry.dt as arrival_dt, NULL as start_dt, cl.dt as end_dt, cl.movement_id, ry.ride as ride_id
                         FROM (SELECT * FROM main.movement WHERE event = 'READY') AS ry
                             INNER JOIN (SELECT * FROM main.movement WHERE event = 'CANCEL') AS cl ON ry.ride = cl.ride
                             INNER JOIN main.rides as rides ON ry.ride = rides.ride_id
@@ -30,7 +30,7 @@ def update_fact_rides():
 
         
     read_cursor.execute(f"""SELECT point_from, point_to, distance, price, client_phone, ry.car_plate_num as car_plate_num,\
-                                ry.dt as arrival_dt, bg.dt as start_dt, ed.dt as end_dt, ed.movement_id
+                                ry.dt as arrival_dt, bg.dt as start_dt, ed.dt as end_dt, ed.movement_id, ry.ride as ride_id
                         FROM (SELECT * FROM main.movement WHERE event = 'READY') AS ry
                             INNER JOIN (SELECT * FROM main.movement WHERE event = 'BEGIN') AS bg ON ry.ride = bg.ride
                             INNER JOIN (SELECT * FROM main.movement WHERE event = 'END') as ed ON bg.ride = ed.ride
@@ -38,17 +38,10 @@ def update_fact_rides():
                             WHERE ed.movement_id > {last_read_line_num};""")
     rides += read_cursor.fetchall()
 
-
-    #получение маскимального id записи 
-    write_cursor.execute("SELECT MAX(ride_id) FROM fact_rides")
-    res = write_cursor.fetchall()
-    if res != [(None,)]:
-        ride_id = res[-1][0] + 1
-    else:
-        ride_id = 0
         
     for ride in rides:
         # print(ride)
+        ride_id = ride[10]
         point_from_txt = ride[0]
         point_to_txt = ride[1]
         distance_val = ride[2]
@@ -67,14 +60,13 @@ def update_fact_rides():
         else:
             driver_pers_num = int(res[-1][0])
             
-        # print((ride_id, point_from_txt, point_to_txt, distance_val, price_amt, client_phone_num,\
-        #     driver_pers_num, car_plate_num, ride_arrival_dt, ride_start_dt, ride_end_dt))
+        print((ride_id, point_from_txt, point_to_txt, distance_val, price_amt, client_phone_num,\
+            driver_pers_num, car_plate_num, ride_arrival_dt, ride_start_dt, ride_end_dt))
         
         write_cursor.execute('INSERT INTO fact_rides VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);',
                     (ride_id, point_from_txt, point_to_txt, distance_val, price_amt, client_phone_num,\
                         driver_pers_num, car_plate_num, ride_arrival_dt, ride_start_dt, ride_end_dt))
         write_conn.commit()
-        ride_id += 1
 
     with open('last_read_line_ride.txt', 'w') as f:
         f.write(str(last_read_line_num))

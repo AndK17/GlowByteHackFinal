@@ -3,11 +3,11 @@ import psycopg2
 
 def update_dim_drivers():
     read_conn = psycopg2.connect(dbname='taxi', user='etl_tech_user', 
-                            password='etl_tech_user_password', host='de-edu-db.chronosavant.ru')
+                            password='etl_tech_user_password', host='de-edu-db.chronosavant.ru', sslmode='require')
     read_cursor = read_conn.cursor()
 
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
-                            password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru')
+                            password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
 
     # выбор только новых записей
