@@ -60,8 +60,8 @@ def update_fact_rides():
         else:
             driver_pers_num = int(res[-1][0])
             
-        print((ride_id, point_from_txt, point_to_txt, distance_val, price_amt, client_phone_num,\
-            driver_pers_num, car_plate_num, ride_arrival_dt, ride_start_dt, ride_end_dt))
+        # print((ride_id, point_from_txt, point_to_txt, distance_val, price_amt, client_phone_num,\
+        #     driver_pers_num, car_plate_num, ride_arrival_dt, ride_start_dt, ride_end_dt))
         
         write_cursor.execute('INSERT INTO fact_rides VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);',
                     (ride_id, point_from_txt, point_to_txt, distance_val, price_amt, client_phone_num,\

@@ -1,5 +1,5 @@
 import psycopg2
-
+import datetime
 
 def update_dim_drivers():
     read_conn = psycopg2.connect(dbname='taxi', user='etl_tech_user', 
@@ -10,15 +10,18 @@ def update_dim_drivers():
                             password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
 
+
     # выбор только новых записей
-    with open('last_read_line_driver.txt', 'r') as f:
-        last_read_line_num = f.readline()
-        if last_read_line_num == '':
-            last_read_line_num = 0
+    with open('last_update_dt_drivers.txt', 'r') as f:
+        max_update_dt = f.readline()
+        if max_update_dt == '':
+            max_update_dt = datetime.datetime(2004, 9, 29)
         else:
-            last_read_line_num = int(last_read_line_num)
-    read_cursor.execute(f"SELECT * FROM main.drivers")
-    drivers = read_cursor.fetchall()[last_read_line_num:]
+            max_update_dt = datetime.datetime.strptime(max_update_dt, '%Y-%m-%d %H:%M:%S')
+
+    read_cursor.execute(f"SELECT * FROM main.drivers WHERE update_dt > '{max_update_dt}'")
+    drivers = read_cursor.fetchall()
+
 
     #получение маскимального id записи  
     write_cursor.execute("SELECT MAX(personnel_num) FROM dim_drivers")
@@ -28,10 +31,11 @@ def update_dim_drivers():
     else:
         personnel_num = 0
 
+    
     #запись новых данных
     for driver in drivers:
-        last_read_line_num += 1
-        
+        max_update_dt = max(max_update_dt, driver[6]) # Максимальное dt обновденных записей
+              
         last_name = driver[2]
         first_name = driver[1]
         middle_name = driver[3]
@@ -62,11 +66,11 @@ def update_dim_drivers():
         # print((personnel_num, last_name, first_name, middle_name, birth_dt,\
         #                 card_num, driver_license_num, driver_license_dt, delited_flag, end_dt))
         personnel_num += 1
-    write_conn.commit()
+        write_conn.commit()
 
-    with open('last_read_line_driver.txt', 'w') as f:
-        f.write(str(last_read_line_num))
-
+    with open('last_update_dt_drivers.txt', 'w') as f:
+        f.write(str(max_update_dt))
+        
     write_cursor.close()
     write_conn.close()
     read_cursor.close()
