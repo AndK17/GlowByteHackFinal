@@ -1,4 +1,5 @@
 import psycopg2
+import datetime
 
 
 def update_dim_cars():
@@ -13,17 +14,20 @@ def update_dim_cars():
 
 
     # выбор только новых записей
-    with open('last_read_line_car.txt', 'r') as f:
-            last_read_line_num = f.readline()
-            if last_read_line_num == '':
-                last_read_line_num = 0
-            else:
-                last_read_line_num = int(last_read_line_num)
-    read_cursor.execute("SELECT * FROM main.car_pool")
-    cars = read_cursor.fetchall()[last_read_line_num:]
+    with open('last_update_dt_cars.txt', 'r') as f:
+        max_update_dt = f.readline()
+        if max_update_dt == '':
+            max_update_dt = datetime.datetime(2004, 9, 29)
+        else:
+            max_update_dt = datetime.datetime.strptime(max_update_dt, '%Y-%m-%d %H:%M:%S')
 
+    read_cursor.execute(f"SELECT * FROM main.car_pool WHERE update_dt > '{max_update_dt}'")
+    cars = read_cursor.fetchall()
+    
 
     for car in cars:
+        max_update_dt = max(max_update_dt, car[5]) # Максимальное dt обновденных записей
+        
         plate_num = car[0]
         model_name = car[1]
         revision_dt = car[2]
@@ -31,7 +35,7 @@ def update_dim_cars():
         end_dt = None
 
         # Проверка на поворение строки и обновление end_dt если есть повторы
-        write_cursor.execute(f"SELECT * FROM dim_cars WHERE plate_num = '{plate_num}';")
+        write_cursor.execute(f"SELECT * FROM dim_cars WHERE plate_num = '{plate_num}' AND end_dt IS NULL;")
         update_car = write_cursor.fetchall()
         if len(update_car) > 0:
             last_line = update_car[-1]
@@ -44,11 +48,11 @@ def update_dim_cars():
         write_cursor.execute('INSERT INTO dim_cars VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s, %s);',
                     (plate_num, model_name, revision_dt, deleted_flag, end_dt))
         # print((plate_num, model_name, revision_dt, deleted_flag, end_dt))
-        last_read_line_num += 1
         write_conn.commit()
 
-    with open('last_read_line_car.txt', 'w') as f:
-        f.write(str(last_read_line_num))
+    
+    with open('last_update_dt_cars.txt', 'w') as f:
+        f.write(str(max_update_dt))
 
     write_cursor.close()
     write_conn.close()
