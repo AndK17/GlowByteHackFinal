@@ -1,5 +1,5 @@
 import psycopg2
-
+import datetime
 
 def update_dim_clients():
     read_conn = psycopg2.connect(dbname='taxi', user='etl_tech_user', 
@@ -28,7 +28,7 @@ def update_dim_clients():
         phone_num = client[2]
         card_num = client[3]
         deleted_flag = 'N'
-        end_dt = None
+        end_dt = datetime.datetime(9999, 12, 31)
         
         # Проверка на поворение строки и обновление end_dt если есть повторы
         write_cursor.execute(f"SELECT * FROM dim_clients WHERE phone_num = '{phone_num}';")
@@ -38,7 +38,7 @@ def update_dim_clients():
             if (last_line[0], last_line[2], last_line[3], last_line[4]) == (phone_num, card_num, deleted_flag, end_dt):
                 continue
             else:
-                write_cursor.execute(f"UPDATE dim_clients SET end_dt = CURRENT_TIMESTAMP WHERE phone_num = '{phone_num}' AND end_dt IS NULL;")
+                write_cursor.execute(f"UPDATE dim_clients SET end_dt = CURRENT_TIMESTAMP-interval '1 second' WHERE phone_num = '{phone_num}' AND end_dt = '{datetime.datetime(9999, 12, 31)}';")
         
         # print((phone_num, card_num, deleted_flag, end_dt))
         write_cursor.execute('INSERT INTO dim_clients VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s);',

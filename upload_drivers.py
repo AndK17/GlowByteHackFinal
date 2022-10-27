@@ -11,14 +11,13 @@ def update_dim_drivers():
     write_cursor = write_conn.cursor()
 
 
-    # выбор только новых записей
-    with open('last_update_dt_drivers.txt', 'r') as f:
-        max_update_dt = f.readline()
-        if max_update_dt == '':
-            max_update_dt = datetime.datetime(2004, 9, 29)
-        else:
-            max_update_dt = datetime.datetime.strptime(max_update_dt, '%Y-%m-%d %H:%M:%S')
-
+    #получаем максимальное start_dt - время когда мы последний раз обновляли данные и берем все что изменилось после него
+    write_cursor.execute(f"SELECT MAX(start_dt) FROM dim_drivers;")
+    max_update_dt = write_cursor.fetchall()
+    if max_update_dt == [(None,)]:
+        max_update_dt = datetime.datetime(2004, 9, 29)
+    else:
+        max_update_dt = max_update_dt[0][0] + datetime.timedelta(hours=3)
     read_cursor.execute(f"SELECT * FROM main.drivers WHERE update_dt > '{max_update_dt}'")
     drivers = read_cursor.fetchall()
 
@@ -33,9 +32,7 @@ def update_dim_drivers():
 
     
     #запись новых данных
-    for driver in drivers:
-        max_update_dt = max(max_update_dt, driver[6]) # Максимальное dt обновденных записей
-              
+    for driver in drivers:              
         last_name = driver[2]
         first_name = driver[1]
         middle_name = driver[3]
@@ -44,7 +41,7 @@ def update_dim_drivers():
         driver_license_num = driver[0]
         driver_license_dt = driver[4]
         delited_flag = 'N'
-        end_dt = None
+        end_dt = datetime.datetime(9999, 12, 31)
         
         
         # Проверка на поворение строки и обновление end_dt если есть повторы
@@ -58,18 +55,16 @@ def update_dim_drivers():
             else:
                 # print((personnel_num, last_name, first_name, middle_name, birth_dt,\
                 #         card_num, driver_license_num, driver_license_dt, delited_flag, end_dt))
-                write_cursor.execute(f"UPDATE dim_drivers SET end_dt = CURRENT_TIMESTAMP WHERE driver_license_num = '{driver_license_num}' AND end_dt IS NULL;")
+                write_cursor.execute(f"UPDATE dim_drivers SET end_dt = CURRENT_TIMESTAMP-interval '1 second' WHERE driver_license_num = '{driver_license_num}' AND end_dt = '{datetime.datetime(9999, 12, 31)}';")
         
-        write_cursor.execute('INSERT INTO dim_drivers VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s);',
+        write_cursor.execute("INSERT INTO dim_drivers VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s, %s, %s, %s, %s, %s, %s);",
                     (personnel_num, last_name, first_name, middle_name, birth_dt,\
                         card_num, driver_license_num, driver_license_dt, delited_flag, end_dt))
         # print((personnel_num, last_name, first_name, middle_name, birth_dt,\
         #                 card_num, driver_license_num, driver_license_dt, delited_flag, end_dt))
         personnel_num += 1
         write_conn.commit()
-
-    with open('last_update_dt_drivers.txt', 'w') as f:
-        f.write(str(max_update_dt))
+        
         
     write_cursor.close()
     write_conn.close()

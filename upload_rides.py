@@ -1,5 +1,5 @@
 import psycopg2
-
+import datetime
 
 def update_fact_rides():
     read_conn = psycopg2.connect(dbname='taxi', user='etl_tech_user', 
