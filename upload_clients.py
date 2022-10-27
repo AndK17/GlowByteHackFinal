@@ -12,26 +12,25 @@ def update_dim_clients():
     write_cursor = write_conn.cursor()
 
 
-    # выбор только новых записей
-    with open('last_read_line_client.txt', 'r') as f:
-        last_read_line_num = f.readline()
-        if last_read_line_num == '':
-            last_read_line_num = 0
-        else:
-            last_read_line_num = int(last_read_line_num)
-    read_cursor.execute(f"SELECT * FROM main.rides")
-    clients = read_cursor.fetchall()[last_read_line_num:]
-
+    #получаем максимальное start_dt - время когда мы последний раз обновляли данные и берем все что изменилось после него
+    write_cursor.execute(f"SELECT MAX(start_dt) FROM dim_clients;")
+    max_update_dt = write_cursor.fetchall()
+    if max_update_dt == [(None,)]:
+        max_update_dt = datetime.datetime(2004, 9, 29)
+    else:
+        max_update_dt = max_update_dt[0][0] + datetime.timedelta(hours=3)
+    read_cursor.execute(f"SELECT * FROM main.rides WHERE dt > '{max_update_dt}' ORDER BY ride_id")
+    clients = read_cursor.fetchall()
+    
 
     for client in clients:
-        last_read_line_num += 1
         phone_num = client[2]
         card_num = client[3]
         deleted_flag = 'N'
         end_dt = datetime.datetime(9999, 12, 31)
         
         # Проверка на поворение строки и обновление end_dt если есть повторы
-        write_cursor.execute(f"SELECT * FROM dim_clients WHERE phone_num = '{phone_num}';")
+        write_cursor.execute(f"SELECT * FROM dim_clients WHERE phone_num = '{phone_num}' ORDER BY start_dt;")
         update_client = write_cursor.fetchall()
         if len(update_client) > 0:
             last_line = update_client[-1]
@@ -44,9 +43,6 @@ def update_dim_clients():
         write_cursor.execute('INSERT INTO dim_clients VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s);',
                     (phone_num, card_num, deleted_flag, end_dt))
         write_conn.commit()
-
-    with open('last_read_line_client.txt', 'w') as f:
-        f.write(str(last_read_line_num))
         
             
     write_cursor.close()
