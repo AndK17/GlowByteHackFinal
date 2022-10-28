@@ -37,7 +37,7 @@ def update():
         
     # 6. rides
     print('fact_rides start update')
-    if update_fact_rides() == []:
+    if update_fact_rides() == 'OK':
         print('fact_rides succesfully updated')
 
 

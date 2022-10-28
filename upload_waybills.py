@@ -2,16 +2,17 @@ import psycopg2
 import os
 import xml.etree.ElementTree as ET
 from ftp_dowload import dowload_new_waybills
+import base64
 
 
 def update_fact_waybills():
     read_conn = psycopg2.connect(dbname='taxi', user='etl_tech_user', 
-                            password='etl_tech_user_password', host='de-edu-db.chronosavant.ru', sslmode='require')
+                            password=base64.b64decode('ZXRsX3RlY2hfdXNlcl9wYXNzd29yZA==').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
     read_cursor = read_conn.cursor()
 
 
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
-                            password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru', sslmode='require')
+                            password=base64.b64decode('ZHdoX2tyYXNub3lhcnNrX3VCUGFYTlN4').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
 
     #Загрузка новых файлов

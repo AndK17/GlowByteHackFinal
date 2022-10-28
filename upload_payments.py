@@ -3,12 +3,12 @@ import datetime
 import os
 import csv
 from ftp_dowload import dowload_new_payments
-
+import base64
 
 
 def update_fact_payments():
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
-                            password='dwh_krasnoyarsk_uBPaXNSx', host='de-edu-db.chronosavant.ru', sslmode='require')
+                            password=base64.b64decode('ZHdoX2tyYXNub3lhcnNrX3VCUGFYTlN4').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
 
 
