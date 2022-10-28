@@ -8,12 +8,27 @@ import base64
 
 def update_fact_payments():
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
-                            password=base64.b64decode('ZHdoX2tyYXNub3lhcnNrX3VCUGFYTlN4').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
+                        password=base64.b64decode('ZHdoX2tyYXNub3lhcnNrX3VCUGFYTlN4').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
 
-
+    # payment_2022-10-28_20-30.csv
+    write_cursor.execute('SELECT MAX(transaction_dt) FROM fact_payments;')
+    max_payment_dt = write_cursor.fetchall()
+    if max_payment_dt == [(None,)]:
+        max_payment_dt = 'payment_2022-10-12_15-00.csv'
+    else:
+        max_payment_dt = max_payment_dt[0][0]
+        
+        minute = '30'
+        hour = max_payment_dt.hour
+        if max_payment_dt.minute > 30:
+            minute = '00'
+            hour += 1
+        max_payment_dt = f'payment_{max_payment_dt.year}-{max_payment_dt.month}-{max_payment_dt.day}_{hour}-{minute}.csv'
+    
+        
     #Загрузка новых файлов
-    dowload_new_payments()
+    dowload_new_payments(max_payment_dt)
 
 
     directory = 'payments/'
@@ -52,12 +67,6 @@ def update_fact_payments():
                     wrong_lines.append((transaction_id, card_num, transaction_amt, transaction_dt))
                     
         os.remove('payments/'+file)
-
-
-    #возможно стоити перенести в другое место и добавить проверку на ошибки
-    if files != []:
-        with open('last_payment.txt', 'w') as f:
-            f.write(files[-1])
 
 
     write_cursor.close()

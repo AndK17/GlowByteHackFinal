@@ -14,9 +14,18 @@ def update_fact_waybills():
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
                             password=base64.b64decode('ZHdoX2tyYXNub3lhcnNrX3VCUGFYTlN4').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
-
+    
+    
+    write_cursor.execute('SELECT MAX(waybill_num) FROM fact_waybills;')
+    max_waybill_num = write_cursor.fetchall()
+    if max_waybill_num == [(None,)]:
+        max_waybill_num = 'waybill_000000.xml'
+    else:
+        max_waybill_num= str(max_waybill_num[0][0]+1)
+        max_waybill_num = 'waybill_'+'0'*(6-len(max_waybill_num))+max_waybill_num+'.xml'
+    
     #Загрузка новых файлов
-    dowload_new_waybills()
+    dowload_new_waybills(max_waybill_num)
 
     directory = 'waybills/'
     files = os.listdir(directory)
@@ -30,7 +39,6 @@ def update_fact_waybills():
     else:
         waybill_num = 0
     
-    # print(files)
     for file in files:
         try:
             #выборка данных
@@ -57,11 +65,7 @@ def update_fact_waybills():
             # print(file)
             # os.remove('waybills/'+file)
             error_files.append(file)
-
-    #возможно стоити перенести в другое место и добавить проверку на ошибки
-    if files != []:
-        with open('last_waybill.txt', 'w') as f:
-            f.write(files[-1])
+            
             
     if error_files != []:
         print('Problems with files:' + ' '.join(error_files))

@@ -6,7 +6,10 @@ def connection(func):
     def _wrapper(*args, **kwargs):
         con = FTP_TLS('de-edu-db.chronosavant.ru', 'etl_tech_user', 'etl_tech_user_password')
         con.prot_p()
-        func(con)
+        if args != ():
+            func(con, args[0])
+        else:
+            func(con)
         con.close()
     return _wrapper
 
@@ -42,11 +45,8 @@ def dowload_all_waybills(con):
 
 
 @connection
-def dowload_new_waybills(con):
+def dowload_new_waybills(con, last_wb):
     con.cwd('/waybills')
-    
-    with open('last_waybill.txt', 'r') as f:
-        last_wb = f.readline()
     
     new_files = [i for i in con.nlst() if i > last_wb]
     
@@ -69,13 +69,10 @@ def dowload_all_payments(con):
             
             
 @connection
-def dowload_new_payments(con):
+def dowload_new_payments(con, last_pay_dt):
     con.cwd('/payments')
     
-    with open('last_payment.txt', 'r') as f:
-        last_pay = f.readline()
-    
-    new_files = [i for i in con.nlst() if i > last_pay]
+    new_files = [i for i in con.nlst() if i > last_pay_dt]
     
     error_files = download('payments/', new_files)
     
@@ -89,5 +86,5 @@ def dowload_new_payments(con):
 if __name__ == "__main__":
     # dowload_all_waybills()
     # dowload_all_payments()
-    dowload_new_waybills()
-    # dowload_new_payments()
+    # dowload_new_waybills()
+    dowload_new_payments()
