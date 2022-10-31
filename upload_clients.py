@@ -26,6 +26,7 @@ def update_dim_clients():
     
 
     for client in clients:
+        start_dt = client[1]
         phone_num = client[2]
         card_num = client[3]
         deleted_flag = 'N'
@@ -39,11 +40,11 @@ def update_dim_clients():
             if (last_line[0], last_line[2], last_line[3], last_line[4]) == (phone_num, card_num, deleted_flag, end_dt):
                 continue
             else:
-                write_cursor.execute(f"UPDATE dim_clients SET end_dt = CURRENT_TIMESTAMP-interval '1 second' WHERE phone_num = '{phone_num}' AND end_dt = '{datetime.datetime(9999, 12, 31)}';")
+                write_cursor.execute(f"UPDATE dim_clients SET end_dt = '{start_dt - datetime.timedelta(seconds=1)}' WHERE phone_num = '{phone_num}' AND end_dt = '{datetime.datetime(9999, 12, 31)}';")
         
-        # print((phone_num, card_num, deleted_flag, end_dt))
-        write_cursor.execute('INSERT INTO dim_clients VALUES(%s, CURRENT_TIMESTAMP, %s, %s, %s);',
-                    (phone_num, card_num, deleted_flag, end_dt))
+        print((start_dt, phone_num, card_num, deleted_flag, end_dt))
+        write_cursor.execute('INSERT INTO dim_clients VALUES(%s, %s, %s, %s, %s);',
+                    (phone_num, start_dt, card_num, deleted_flag, end_dt))
         write_conn.commit()
         
             
