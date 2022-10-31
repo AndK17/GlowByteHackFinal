@@ -4,6 +4,10 @@ from upload_waybills import update_fact_waybills
 from upload_cars import update_dim_cars
 from upload_clients import update_dim_clients
 from upload_rides import update_fact_rides
+from upload_drivers_payments import update_drivers_payments
+from upload_drivers_violation import update_drivers_violations
+from upload_drivers_overtime import update_drivers_overtime
+from upload_clients_hist import upload_clients_hist
 import schedule
 import time
 
@@ -40,7 +44,22 @@ def update():
     if update_fact_rides() == 'OK':
         print('fact_rides succesfully updated')
 
-
+    print('drivers_payments start update')
+    if update_drivers_payments() == "OK":
+        print('drivers_payments successfully updated')
+        
+    print('drivers_violations start update')
+    if update_drivers_violations() == "OK":
+        print('drivers_violations successfully updated')
+        
+    print('drivers_overtime start update')
+    if update_drivers_overtime() == "OK":
+        print('drivers_overtime successfully updated')
+    
+    print('clients_hist start update')
+    if upload_clients_hist() == "OK":
+        print('clients_hist successfully updated')
+        
     print(f'[{time.ctime()}] Upload end')
     return
 

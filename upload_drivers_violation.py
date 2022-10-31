@@ -2,7 +2,7 @@ import psycopg2
 import base64
 
 
-def update_drivers_overtime():
+def update_drivers_violations():
     write_conn = psycopg2.connect(dbname='dwh', user='dwh_krasnoyarsk', 
                             password=base64.b64decode('ZHdoX2tyYXNub3lhcnNrX3VCUGFYTlN4').decode('utf-8'), host='de-edu-db.chronosavant.ru', sslmode='require')
     write_cursor = write_conn.cursor()
@@ -48,4 +48,4 @@ def update_drivers_overtime():
     
     
 if __name__ == '__main__':
-    update_drivers_overtime()
+    update_drivers_violations()
