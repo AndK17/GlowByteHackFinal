@@ -54,7 +54,7 @@ def update_fact_rides():
         ride_start_dt = ride[7]
         ride_end_dt = ride[8]
         
-        write_cursor.execute(f"SELECT driver_pers_num FROM fact_waybills WHERE car_plate_num = '{car_plate_num}' AND work_start_dt <= '{ride_arrival_dt}' AND (work_end_dt >= '{ride_end_dt}' OR work_end_dt IS NULL);")
+        write_cursor.execute(f"SELECT driver_pers_num FROM fact_waybills WHERE car_plate_num = '{car_plate_num}' AND work_start_dt <= '{ride_arrival_dt}' AND work_end_dt >= '{ride_end_dt}';")
         res = write_cursor.fetchall()
         if res == []:
             driver_pers_num = -1

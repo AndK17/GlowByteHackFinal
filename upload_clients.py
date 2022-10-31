@@ -42,7 +42,7 @@ def update_dim_clients():
             else:
                 write_cursor.execute(f"UPDATE dim_clients SET end_dt = '{start_dt - datetime.timedelta(seconds=1)}' WHERE phone_num = '{phone_num}' AND end_dt = '{datetime.datetime(9999, 12, 31)}';")
         
-        print((start_dt, phone_num, card_num, deleted_flag, end_dt))
+        # print((start_dt, phone_num, card_num, deleted_flag, end_dt))
         write_cursor.execute('INSERT INTO dim_clients VALUES(%s, %s, %s, %s, %s);',
                     (phone_num, start_dt, card_num, deleted_flag, end_dt))
         write_conn.commit()
